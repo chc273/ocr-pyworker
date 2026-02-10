@@ -12,9 +12,9 @@ MODEL_LOAD_LOG_MSG = [
 ]
 
 MODEL_ERROR_LOG_MSGS = [
-    "Traceback (most recent call last):",
-    "RuntimeError:",
     "CUDA out of memory",
+    "RuntimeError: CUDA",
+    "torch.cuda.OutOfMemoryError",
 ]
 
 MODEL_INFO_LOG_MSGS = [
@@ -33,13 +33,13 @@ def request_parser(request):
 def benchmark_generator() -> dict:
     """Generate a minimal benchmark request (small base64 image)."""
     import base64
-    # 1x1 white PNG
-    tiny_png = base64.b64encode(
-        b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01'
-        b'\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00'
-        b'\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00'
-        b'\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82'
-    ).decode()
+    import io
+    from PIL import Image
+    # Create a proper 10x10 white PNG
+    img = Image.new("RGB", (10, 10), color=(255, 255, 255))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    tiny_png = base64.b64encode(buf.getvalue()).decode()
     return {
         "image_base64": tiny_png,
         "prompt": "<image>\n<|grounding|>Convert the document to markdown. ",
