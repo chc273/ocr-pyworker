@@ -18,6 +18,12 @@ echo "=== setup.sh started at $(date) ==="
 echo "CONTAINER_ID=$CONTAINER_ID"
 echo "PYWORKER_REPO=$PYWORKER_REPO"
 
+# Ensure basic tools are available (runtime images may lack git/wget)
+if ! which git > /dev/null 2>&1 || ! which wget > /dev/null 2>&1; then
+    echo "Installing git and wget..."
+    apt-get update -qq && apt-get install -y -qq git wget curl > /dev/null 2>&1
+fi
+
 # Install model server deps only once
 if [ ! -f "$WORKSPACE_DIR/.deps_ok" ]; then
     echo "Installing model server dependencies..."
