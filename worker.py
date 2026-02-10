@@ -1,6 +1,6 @@
 """PyWorker configuration for DeepSeek-OCR-2 serverless endpoint on vast.ai."""
 
-from vastai import Worker, WorkerConfig, HandlerConfig, LogActionConfig
+from vastai import Worker, WorkerConfig, HandlerConfig, LogActionConfig, BenchmarkConfig
 
 MODEL_SERVER_URL = "http://127.0.0.1"
 MODEL_SERVER_PORT = 18000
@@ -30,6 +30,25 @@ def request_parser(request):
     return data
 
 
+def benchmark_generator() -> dict:
+    """Generate a minimal benchmark request (small base64 image)."""
+    import base64
+    # 1x1 white PNG
+    tiny_png = base64.b64encode(
+        b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01'
+        b'\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00'
+        b'\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00'
+        b'\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82'
+    ).decode()
+    return {
+        "image_base64": tiny_png,
+        "prompt": "<image>\n<|grounding|>Convert the document to markdown. ",
+        "base_size": 1024,
+        "image_size": 768,
+        "crop_mode": True,
+    }
+
+
 worker_config = WorkerConfig(
     model_server_url=MODEL_SERVER_URL,
     model_server_port=MODEL_SERVER_PORT,
@@ -42,6 +61,11 @@ worker_config = WorkerConfig(
             allow_parallel_requests=False,
             request_parser=request_parser,
             max_queue_time=600.0,
+            benchmark_config=BenchmarkConfig(
+                generator=benchmark_generator,
+                concurrency=1,
+                runs=1,
+            ),
         ),
         HandlerConfig(
             route="/health",
