@@ -22,7 +22,6 @@ echo "PYWORKER_REPO=$PYWORKER_REPO"
 if [ ! -f "$WORKSPACE_DIR/.deps_ok" ]; then
     echo "Installing model server dependencies..."
     pip install transformers==4.46.3 tokenizers==0.20.3 PyMuPDF einops easydict addict Pillow numpy fastapi 'uvicorn[standard]' 2>&1 | tail -5
-    pip install flash-attn==2.7.3 --no-build-isolation 2>&1 | tail -5
     touch "$WORKSPACE_DIR/.deps_ok"
     echo "Dependencies installed."
 fi
