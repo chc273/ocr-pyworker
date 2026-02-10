@@ -1,15 +1,19 @@
 #!/bin/bash
 # Setup script for DeepSeek-OCR-2 model server on vast.ai
-# This is run by the onstart-cmd. It:
 # 1. Installs model server deps
 # 2. Starts the model server on port 18000
 # 3. Downloads and runs start_server.sh to set up the PyWorker
-set -e
 
 export PIP_ROOT_USER_ACTION=ignore
 export HF_HOME=/workspace/hf_cache
 
-mkdir -p /var/log/portal /app
+mkdir -p /var/log/portal /app /workspace
+
+exec &> >(tee -a /workspace/setup.log)
+echo "=== setup.sh started at $(date) ==="
+echo "CONTAINER_ID=$CONTAINER_ID"
+echo "PYWORKER_REPO=$PYWORKER_REPO"
+echo "MODEL_NAME=$MODEL_NAME"
 
 # Install deps only once
 if [ ! -f /workspace/.deps_ok ]; then
@@ -28,7 +32,11 @@ fi
 # Start model server in background
 echo "Starting OCR model server on port 18000..."
 nohup python3 /app/ocr_server.py > /var/log/portal/ocr_server.log 2>&1 &
+echo "Model server PID: $!"
 
-# Now start the PyWorker (this downloads start_server.sh and runs it, blocking)
-echo "Starting PyWorker..."
-wget -qO- https://raw.githubusercontent.com/vast-ai/pyworker/main/start_server.sh | bash
+# Download and run start_server.sh for PyWorker setup
+echo "Downloading start_server.sh..."
+wget -q -O /workspace/start_server.sh https://raw.githubusercontent.com/vast-ai/pyworker/main/start_server.sh
+chmod +x /workspace/start_server.sh
+echo "Running start_server.sh..."
+bash /workspace/start_server.sh
